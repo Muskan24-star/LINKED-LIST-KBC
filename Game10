@@ -1,0 +1,161 @@
+#include <iostream.h>
+#include <stdlib.h>
+#include <time.h>
+#include <string.h>
+#include<ctype.h>
+#include<conio.h>
+
+typedef int bool;
+#define true 1
+#define false 0
+
+class Question {
+public:
+    char question[256];
+    char options[4][256];
+    char correctOption;
+    Question* next;
+
+    Question(const char* q, const char* opt[], char correct) {
+	initialize(q, opt, correct);
+	next = NULL;
+    }
+
+    void initialize(const char* q, const char* opt[], char correct) {
+	strcpy(question, q);
+	for (int i = 0; i < 4; ++i) {
+	    strcpy(options[i], opt[i]);
+	}
+	correctOption = correct;
+    }
+};
+
+class KBCGame
+{
+private:
+    Question* head;
+    int totalAmount;
+    bool lifelineUsed;
+    bool switchUsed;
+
+public:
+    KBCGame() {
+	head = NULL;
+	totalAmount = 0;
+	lifelineUsed = false;
+	switchUsed = false;
+    }
+
+    void addQuestion(const char* q, const char* opt[], char correct) {
+	Question* newQuestion = new Question(q, opt, correct);
+	if (!head) {
+	    head = newQuestion;
+	} else {
+	    Question* temp = head;
+	    while (temp->next) {
+		temp = temp->next;
+	    }
+	    temp->next = newQuestion;
+	}
+    }
+
+    void displayWelcomeMessage();
+    void displayQuestion(Question* q);
+    bool checkAnswer(char userAnswer, char correctAnswer);
+    void useLifeline(Question* q);
+    void playGame();
+    Question* getHead() { return head; }
+    int getTotalAmount() { return totalAmount; }
+    void incrementTotalAmount(int amount) { totalAmount += amount; }
+    bool isLifelineUsed() { return lifelineUsed; }
+    void setLifelineUsed(bool used) { lifelineUsed = used; }
+    bool isSwitchUsed() { return switchUsed; }
+    void setSwitchUsed(bool used) { switchUsed = used; }
+};
+
+void KBCGame::displayWelcomeMessage() {
+    cout << "Welcome to Kaun Banega Crorepati!" << endl;
+    cout << "Answer the questions correctly to win prizes." << endl;
+}
+
+void KBCGame::displayQuestion(Question* q) {
+    cout << q->question << endl;
+    for (int i = 0; i < 4; ++i) {
+	cout << q->options[i] << endl;
+    }
+    cout << "Enter your answer (A, B, C, or D) or type 'L' for 50-50 lifeline or 'S' to switch the question: ";
+}
+
+bool KBCGame::checkAnswer(char userAnswer, char correctAnswer) {
+    return toupper(userAnswer) == correctAnswer;
+}
+
+void KBCGame::useLifeline(Question* q) {
+    cout << "50-50 Lifeline used! Two incorrect options will be removed." << endl;
+    int removed = 0;
+    for (int i = 0; i < 4; ++i) {
+	if (q->options[i][0] != q->correctOption && removed < 2) {
+	    cout << q->options[i] << " (Removed)" << endl;
+	    removed++;
+	} else {
+	    cout << q->options[i] << endl;
+	}
+    }
+}
+
+void playGame(KBCGame& game) {
+    game.displayWelcomeMessage();
+
+    Question* current = game.getHead();
+    while (current) {
+	game.displayQuestion(current);
+	char userAnswer;
+	cin >> userAnswer;
+
+	if (toupper(userAnswer) == 'L' && !game.isLifelineUsed()) {
+	    game.useLifeline(current);
+	    game.setLifelineUsed(true);
+	    cout << "Enter your answer (A, B, C, or D): ";
+	    cin >> userAnswer;
+	} else if (toupper(userAnswer) == 'S' && !game.isSwitchUsed()) {
+	    game.setSwitchUsed(true);
+	    cout << "Switch the Question lifeline used! Here is a new question." << endl;
+	    current = current->next;
+	    if (!current) break;
+	    game.displayQuestion(current);
+	    cin >> userAnswer;
+	}
+
+	if (game.checkAnswer(userAnswer, current->correctOption)) {
+	    game.incrementTotalAmount(1000); // Increment prize amount
+	    cout << "Correct! You have won Rs. " << game.getTotalAmount() << endl;
+	} else {
+	    cout << "Incorrect! The correct answer was " << current->correctOption << endl;
+	    break;
+	}
+
+	current = current->next;
+    }
+
+    cout << "You have won a total of Rs. " << game.getTotalAmount() << endl;
+}
+
+int main() {
+	clrscr();
+    KBCGame game;
+
+    const char* options1[] = {"A. Paris", "B. Berlin", "C. Rome", "D. Madrid"};
+    game.addQuestion("What is the capital of France?", options1, 'A');
+
+    const char* options2[] = {"A. Mars", "B. Venus", "C. Jupiter", "D. Saturn"};
+    game.addQuestion("Which planet is known as the Red Planet?", options2, 'A');
+
+    const char* options3[] = {"A. Elephant", "B. Blue Whale", "C. Giraffe", "D. Lion"};
+    game.addQuestion("What is the largest mammal?", options3, 'B');
+
+    playGame(game);
+    getch();
+    return 0;
+}
+
+
